@@ -2,7 +2,7 @@
 
 [`xyhelper/chatgpt-web-ui`](https://github.com/xyhelper/chatgpt-web-ui) 的 Docker Compose 生产部署仓库。
 
-本仓库仅包含部署相关文件(`docker-compose.yml` 编排 + `deploy.sh` 一键部署脚本),应用本体以镜像 `ghcr.io/xyhelper/chatgpt-web-ui:latest` 形式从 GHCR 拉取,不包含源码。
+本仓库仅包含部署相关文件(`docker-compose.yml` 编排 + `deploy.sh` 部署脚本),应用本体以镜像 `ghcr.io/xyhelper/chatgpt-web-ui:latest` 形式从 GHCR 拉取,不包含源码。
 
 ## 特性
 
@@ -34,13 +34,13 @@ environment:
 
 > `UPSTREAM_URL` 为**必填项**,不修改则页面接口会全部请求到无效地址。其余配置均有合理默认值,一般无需改动。详见[配置说明](#配置说明)。
 
-### 3. 一键部署(推荐)
+### 3. 部署脚本(推荐)
 
 ```bash
 ./deploy.sh
 ```
 
-脚本自动完成:**拉取仓库更新 → 拉取最新镜像 → 启动容器 → 清理旧镜像 → 健康检查**。
+脚本仅做三件事:**拉取最新镜像(`pull`)→ 重建并启动容器(`up -d --remove-orphans`,同时清理孤儿容器)→ 清理不再使用的历史版本镜像(`image prune -f`)**,不执行 `git pull`,不会覆盖你修改过的本地文件(如 `docker-compose.yml` 中的 `UPSTREAM_URL`),并自动适配新旧 compose 命令。
 
 部署完成后访问 <http://服务器IP:8000> 即可。
 
@@ -131,24 +131,23 @@ ports:
 
 因此它适合接入 Docker `healthcheck`、负载均衡器或 Kubernetes 探针。**不应**使用 `/` 作为探针路径——该路径走完整页面渲染流程,无法反映服务真实存活状态。
 
-## 一键部署脚本(deploy.sh)
+## 部署脚本(deploy.sh)
 
-仓库提供 `deploy.sh` 一键部署脚本,自动完成**拉取更新 → 部署**全流程:
+仓库提供 `deploy.sh` 部署脚本,仅执行三步:
 
-1. 拉取仓库更新(`git pull`,更新 compose 文件等)
-2. 拉取最新镜像(`docker compose pull`)
-3. 重建并启动容器(`docker compose up -d`)
-4. 清理未使用的旧镜像(`docker image prune -f`)
-5. 健康检查验证(`/healthz`)
+1. 拉取最新镜像(`docker compose pull`)
+2. 重建并启动容器(`docker compose up -d --remove-orphans`)
+3. 清理不再使用的历史版本镜像(`docker image prune -f`)
 
 ```bash
-./deploy.sh                       # 完整部署(默认)
-./deploy.sh --no-pull             # 跳过 git pull,仅更新镜像并重启
-./deploy.sh --skip-healthcheck    # 跳过健康检查验证
+./deploy.sh
 ```
 
-> 脚本会自动解析 compose 中的宿主端口并探测 `http://127.0.0.1:<端口>/healthz` 验证服务可用性。
-> 可直接配置到 crontab 实现定时自动更新部署。
+> **新旧 Compose 命令自动适配**:脚本会优先使用新版 `docker compose`(Compose v2 插件),不存在时自动回退到旧版独立命令 `docker-compose`(Compose v1),两种环境均可直接使用。
+>
+> `--remove-orphans` 会一并清理 compose 文件中已不存在的孤儿容器(如修改 compose 删除某服务后,旧容器不会残留),不影响当前服务及容器内数据。
+>
+> `docker image prune -f` 只清理未被任何容器引用的镜像(悬空镜像 + 旧版本镜像),不影响当前运行中镜像,可放心使用。
 
 ## 更新与升级
 
@@ -159,13 +158,17 @@ docker compose pull
 docker compose up -d
 ```
 
-如需清理旧镜像:
+或直接使用部署脚本(自动适配新旧 compose 命令,并自动清理不再使用的历史版本镜像):
 
 ```bash
-docker image prune
+./deploy.sh
 ```
 
-> 使用一键部署脚本可自动完成以上全部步骤,见[一键部署脚本](#一键部署脚本deploysh)。
+如需手动清理旧镜像:
+
+```bash
+docker image prune -f
+```
 
 ## 常见问题(FAQ)
 
