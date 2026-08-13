@@ -1,8 +1,8 @@
 # chatgpt-web-ui-deploy
 
-[`xyhelper/chatgpt-web-ui`](https://github.com/xyhelper/chatgpt-web-ui) 的 Docker Compose 生产部署示例。
+[`xyhelper/chatgpt-web-ui`](https://github.com/xyhelper/chatgpt-web-ui) 的 Docker Compose 生产部署仓库。
 
-本仓库仅包含部署编排文件(`docker-compose.yml`),应用本体以镜像 `ghcr.io/xyhelper/chatgpt-web-ui:latest` 形式从 GHCR 拉取,不包含源码。
+本仓库仅包含部署相关文件(`docker-compose.yml` 编排 + `deploy.sh` 一键部署脚本),应用本体以镜像 `ghcr.io/xyhelper/chatgpt-web-ui:latest` 形式从 GHCR 拉取,不包含源码。
 
 ## 特性
 
@@ -21,21 +21,36 @@ git clone https://github.com/xyhelper/chatgpt-web-ui-deploy.git
 cd chatgpt-web-ui-deploy
 ```
 
-或仅下载 `docker-compose.yml` 到你的服务器。
+> 只需 `docker-compose.yml` 与 `deploy.sh` 两个文件,复制到你的服务器即可。
 
-### 2. 修改配置(可选)
+### 2. 修改配置(必填)
 
-编辑 `docker-compose.yml`,把 `UPSTREAM_URL` 占位地址(示例中的 `https://your-upstream.example.com`)替换为你的上游 API 地址。详见[配置说明](#配置说明)。
+编辑 `docker-compose.yml`,把 `UPSTREAM_URL` 占位地址替换为你自己的上游 API 地址:
 
-### 3. 启动
+```yaml
+environment:
+  UPSTREAM_URL: "https://your-upstream.example.com"   # ← 改为你的上游地址
+```
+
+> `UPSTREAM_URL` 为**必填项**,不修改则页面接口会全部请求到无效地址。其余配置均有合理默认值,一般无需改动。详见[配置说明](#配置说明)。
+
+### 3. 一键部署(推荐)
+
+```bash
+./deploy.sh
+```
+
+脚本自动完成:**拉取仓库更新 → 拉取最新镜像 → 启动容器 → 清理旧镜像 → 健康检查**。
+
+部署完成后访问 <http://服务器IP:8000> 即可。
+
+### 或手动启动
 
 ```bash
 docker compose up -d
 ```
 
-启动后访问 <http://服务器IP:8000> 即可。
-
-验证服务状态:
+### 验证服务状态
 
 ```bash
 # 查看容器状态与日志
@@ -116,6 +131,25 @@ ports:
 
 因此它适合接入 Docker `healthcheck`、负载均衡器或 Kubernetes 探针。**不应**使用 `/` 作为探针路径——该路径走完整页面渲染流程,无法反映服务真实存活状态。
 
+## 一键部署脚本(deploy.sh)
+
+仓库提供 `deploy.sh` 一键部署脚本,自动完成**拉取更新 → 部署**全流程:
+
+1. 拉取仓库更新(`git pull`,更新 compose 文件等)
+2. 拉取最新镜像(`docker compose pull`)
+3. 重建并启动容器(`docker compose up -d`)
+4. 清理未使用的旧镜像(`docker image prune -f`)
+5. 健康检查验证(`/healthz`)
+
+```bash
+./deploy.sh                       # 完整部署(默认)
+./deploy.sh --no-pull             # 跳过 git pull,仅更新镜像并重启
+./deploy.sh --skip-healthcheck    # 跳过健康检查验证
+```
+
+> 脚本会自动解析 compose 中的宿主端口并探测 `http://127.0.0.1:<端口>/healthz` 验证服务可用性。
+> 可直接配置到 crontab 实现定时自动更新部署。
+
 ## 更新与升级
 
 本服务无状态,升级只需拉取新镜像并重建容器:
@@ -130,6 +164,8 @@ docker compose up -d
 ```bash
 docker image prune
 ```
+
+> 使用一键部署脚本可自动完成以上全部步骤,见[一键部署脚本](#一键部署脚本deploysh)。
 
 ## 常见问题(FAQ)
 
