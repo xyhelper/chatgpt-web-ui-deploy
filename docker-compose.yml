@@ -1,0 +1,54 @@
+# chatgpt-web-ui 生产部署(docker compose)
+#
+# 使用方式:
+#   直接使用官方发布镜像,无需本地构建:
+#        docker compose up -d
+#   升级到最新版本:
+#        docker compose pull && docker compose up -d
+#   访问 http://localhost:8000
+#
+# 配置说明:
+#   - 所有配置项均支持环境变量与 config.yaml 两种方式,优先级:
+#     config.yaml(挂载) > 环境变量 > 镜像内置默认值(见 config/config.go)
+#   - 本服务无状态(登录态等数据存于浏览器 cookie),无需持久化卷
+#   - 注意:卷/绑定挂载会遮蔽镜像内同名路径的内容(镜像内打包的资源在挂载后
+#     不可见)。若挂载 resource/template/tpl 等目录,须先确保宿主机目录包含
+#     完整资源(如从镜像 COPY 出来),否则页面模板会丢失、无法渲染
+services:
+  chatgpt-web-ui:
+    # 官方发布镜像(包含最新抓取的页面模板)
+    image: ghcr.io/xyhelper/chatgpt-web-ui:latest
+
+    container_name: chatgpt-web-ui
+    restart: unless-stopped
+
+    # 端口映射:宿主机 8000 -> 容器内 80(需与下方 PORT 保持一致)
+    ports:
+      - "8000:80"
+
+    # 环境变量覆盖配置(config.yaml 已配置的键优先于环境变量)
+    environment:
+      # web 服务监听端口(容器内,默认 80)
+      PORT: "80"
+      # 上游 API 服务地址(必填),请改为你实际使用的上游地址
+      UPSTREAM_URL: "https://your-upstream.example.com"
+      # 未登录(无 accessToken)时跳转的登录地址,默认 /auth/login
+      LOGIN_URL: "/auth/login"
+      # 是否显示工作区域(聊天/工作切换器):true 按账户结构自动判断(默认),false 强制隐藏
+      SHOW_WORKSPACE: "true"
+      # 固定模板版本(可选,默认自动发现 tpl/.current 指向的最新版本,一般无需配置)
+      # TEMPLATE_VERSION: "prod-xxx"
+
+    # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
+    # 取消注释前,请将项目根目录的 config.yaml 按需修改后使用
+    # volumes:
+    #   - ./config.yaml:/app/config.yaml:ro
+
+    # 健康检查:探测独立端点 /healthz(返回 200 + "ok",不渲染页面、
+    # 不请求上游、不依赖登录态;不应指向 /,该路径走完整页面渲染流程)。
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
