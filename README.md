@@ -81,9 +81,20 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `UPSTREAM_URL` | `https://dev-chatgpt.xyhelper.cn` | 上游 API 服务地址,所有 `/backend-api/*` 等请求反向代理的目标 |
 | `LOGIN_URL` | `/auth/login` | 未登录(无 accessToken)时跳转的登录地址 |
 | `SHOW_WORKSPACE` | `true` | 是否显示工作区域(聊天/工作切换器)。`true` 按账户结构自动判断,`false` 强制隐藏 |
-| `TEMPLATE_VERSION` | 自动发现 | 固定页面模板 build 版本(如 `prod-xxx`)。一般无需配置,默认自动发现 `tpl/.current` 指向的最新版本 |
+| `TEMPLATE_VERSION` | 自动发现 | 固定页面模板 build 版本(如 `prod-xxx`)。一般无需配置,默认自动发现 `tpl/.current` 指向的最新版本。若显式指定了镜像内不存在的版本,启动时会尝试从 `https://github.com/oaistatic/<版本>` 自动克隆(见[模板版本缺失时自动克隆](#模板版本缺失时自动克隆)) |
 
 > **注意**:`UPSTREAM_URL` 在示例 compose 中为占位地址 `https://your-upstream.example.com`,注释标注为**必填**,**部署前请务必替换**为你自己的上游 API 地址,否则页面请求会全部打到无效地址。
+
+### 模板版本缺失时自动克隆
+
+镜像内置了默认的页面模板,一般无需任何配置即可直接使用。
+
+若通过 `TEMPLATE_VERSION` 显式指定了一个**镜像内不存在**的模板版本,服务启动时会自动尝试从 `https://github.com/oaistatic/<版本>` 克隆该版本模板到容器内:
+
+- **克隆成功**:自动使用该版本模板渲染页面
+- **克隆失败**:启动日志会打印相关提示(如仓库不存在、网络不可达、未安装 git 等),此时请检查版本号是否正确、容器能否访问 `github.com`
+
+> 自动克隆需要容器能访问 `github.com`,且目标版本已发布到 `oaistatic` 组织(由上游 `publish-template.sh` 发布)。普通使用场景无需配置 `TEMPLATE_VERSION`,直接使用镜像内置默认模板即可。
 
 ### 自定义 config.yaml(可选)
 
