@@ -2,6 +2,8 @@
 
 [`xyhelper/chatgpt-web-ui`](https://github.com/xyhelper/chatgpt-web-ui) 的 Docker Compose 生产部署仓库。
 
+> ⚠️ **上游项目为闭源**:`xyhelper/chatgpt-web-ui` 仓库不公开应用源码,仅以 Docker 镜像形式分发。
+
 本仓库仅包含部署相关文件(`docker-compose.yml` 编排 + `deploy.sh` 部署脚本),应用本体以镜像 `ghcr.io/xyhelper/chatgpt-web-ui:latest` 形式从 GHCR 拉取,不包含源码。
 
 ## 特性
