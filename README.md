@@ -84,6 +84,9 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `LOGIN_URL` | `/auth/login` | 未登录(无 accessToken)时跳转的登录地址 |
 | `SHOW_WORKSPACE` | `true` | 是否显示工作区域(聊天/工作切换器)。`true` 按账户结构自动判断,`false` 强制隐藏 |
 | `TEMPLATE_VERSION` | 自动发现 | 固定页面模板 build 版本(如 `prod-xxx`)。一般无需配置,默认自动发现 `tpl/.current` 指向的最新版本。若显式指定了镜像内不存在的版本,启动时会尝试从 `https://github.com/oaistatic/<版本>` 自动克隆(见[模板版本缺失时自动克隆](#模板版本缺失时自动克隆)) |
+| `TURNSTILE_SITE_KEY` | 空 | 自定义 Cloudflare Turnstile 站点 key。与 `TURNSTILE_SECRET_KEY` 同时配置才启用:前端(经 xy.js 劫持 turnstile.render)用自定义 key 渲染,后端 finalize 调 siteverify 真实验证,不匹配时 conversation 校验返回 403(见上游 `config.TurnstileEnabled`)。不配置则沿用模板内置官方 key,后端仅记录提交状态不真实验证 |
+| `TURNSTILE_SECRET_KEY` | 空 | Turnstile 站点 secret key,须与 `TURNSTILE_SITE_KEY` 成对配置 |
+| `PROOF_OF_WORK_ENABLED` | `false` | 是否启用 Proof of Work 挑战(前端哈希计算)。默认关闭:前端不计算、不提交 proofofwork,请求零额外开销;开启后 prepare 下发 seed/difficulty、finalize 校验哈希,失败返回 403 `invalid_proofofwork`(见上游 `config.ProofOfWorkEnabled`) |
 
 > **注意**:`UPSTREAM_URL` 在示例 compose 中为占位地址 `https://your-upstream.example.com`,注释标注为**必填**,**部署前请务必替换**为你自己的上游 API 地址,否则页面请求会全部打到无效地址。
 

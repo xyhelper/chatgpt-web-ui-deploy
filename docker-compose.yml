@@ -38,6 +38,14 @@ services:
       SHOW_WORKSPACE: "true"
       # 固定模板版本(可选,默认自动发现 tpl/.current 指向的最新版本,一般无需配置)
       # TEMPLATE_VERSION: "prod-xxx"
+      # 自定义 Cloudflare Turnstile(可选):site key + secret key 同时配置才启用
+      # (见上游 config.TurnstileEnabled)。启用后前端用自定义 key 渲染 turnstile,
+      # 后端 finalize 真实验证 token,不匹配时 conversation 校验返回 403
+      # TURNSTILE_SITE_KEY: "0x4AAAA..."
+      # TURNSTILE_SECRET_KEY: "0x4AAAA..."
+      # Proof of Work 挑战(可选,默认 false 关闭):开启后前端需计算 PoW 哈希,
+      # finalize 校验失败返回 403 invalid_proofofwork
+      # PROOF_OF_WORK_ENABLED: "false"
 
     # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
     # 取消注释前,请将项目根目录的 config.yaml 按需修改后使用
