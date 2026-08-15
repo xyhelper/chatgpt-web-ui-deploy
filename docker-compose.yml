@@ -32,8 +32,11 @@ services:
       PORT: "80"
       # 上游 API 服务地址(必填),请改为你实际使用的上游地址
       UPSTREAM_URL: "https://your-upstream.example.com"
-      # 未登录(无 accessToken)时跳转的登录地址,默认 /auth/login
-      LOGIN_URL: "/auth/login"
+      # 未登录(无 accessToken)时跳转的登录地址,默认 /auth/uilogin(mirror 模式,
+      # 输入 access token 的登录页)。
+      # share 模式建议设置为 /list(车队列表页):用户未登录时先看到车队列表,
+      # 点击车队进入登录,登录后回到聊天页
+      LOGIN_URL: "/list"
       # 是否显示工作区域(聊天/工作切换器):true 按账户结构自动判断(默认),false 强制隐藏
       SHOW_WORKSPACE: "true"
       # 固定模板版本(可选,默认自动发现 tpl/.current 指向的最新版本,一般无需配置)

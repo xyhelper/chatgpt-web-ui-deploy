@@ -81,7 +81,7 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | --- | --- | --- |
 | `PORT` | `80` | web 服务监听端口(**容器内**端口,需与 `ports` 映射保持一致) |
 | `UPSTREAM_URL` | `https://dev-chatgpt.xyhelper.cn` | 上游 API 服务地址,所有 `/backend-api/*` 等请求反向代理的目标 |
-| `LOGIN_URL` | `/auth/login` | 未登录(无 accessToken)时跳转的登录地址 |
+| `LOGIN_URL` | `/auth/uilogin` | 未登录(无 accessToken)时跳转的登录地址。**share 模式建议设置为 `/list`**(车队列表页):用户未登录时先看到车队列表,点击车队进入登录,登录后回到聊天页;mirror 模式(默认)为 `/auth/uilogin`(输入 access token 的登录页) |
 | `SHOW_WORKSPACE` | `true` | 是否显示工作区域(聊天/工作切换器)。`true` 按账户结构自动判断,`false` 强制隐藏 |
 | `TEMPLATE_VERSION` | 自动发现 | 固定页面模板 build 版本(如 `prod-xxx`)。一般无需配置,默认自动发现 `tpl/.current` 指向的最新版本。若显式指定了镜像内不存在的版本,启动时会尝试从 `https://github.com/oaistatic/<版本>` 自动克隆(见[模板版本缺失时自动克隆](#模板版本缺失时自动克隆)) |
 | `TURNSTILE_SITE_KEY` | 空 | 自定义 Cloudflare Turnstile 站点 key。与 `TURNSTILE_SECRET_KEY` 同时配置才启用:前端(经 xy.js 劫持 turnstile.render)用自定义 key 渲染,后端 finalize 调 siteverify 真实验证,不匹配时 conversation 校验返回 403(见上游 `config.TurnstileEnabled`)。不配置则沿用模板内置官方 key,后端仅记录提交状态不真实验证 |
@@ -195,7 +195,7 @@ docker image prune -f
 | 可自定义文件 | 容器内路径 | 说明 |
 | --- | --- | --- |
 | 自定义脚本 | `/app/resource/public/custom.js` | **每个页面都会加载**(jquery 之后、xy.js 之前,URL 带时间戳防缓存),适合注入样式、拦截请求、改 DOM、接第三方统计 |
-| 登录页 | `/app/resource/public/auth/login/index.html` | 默认登录页(`LOGIN_URL` 默认指向 `/auth/login`),单文件自包含(内联 CSS/JS) |
+| 登录页 | `/app/resource/public/auth/login/index.html` | share 模式登录页(输入 usertoken,经 `/auth/logintoken` 校验),单文件自包含(内联 CSS/JS)。mirror 模式(默认)登录页为 `/auth/uilogin`(输入 access token) |
 | 车队列表页 | `/app/resource/public/list/index.html` | 车队列表页 `/list`,仅 `RUN_MODE=share` 使用,单文件自包含 |
 | 列表页逻辑脚本 | `/app/resource/public/list.js` | share 模式**每个页面**都会加载的车队列表逻辑(URL 带时间戳),mirror 模式不加载 |
 | 全局脚本 | `/app/resource/public/xy.js` | 全局逻辑,每个页面加载(URL 带时间戳) |
@@ -241,7 +241,7 @@ docker image prune -f
 
 ### 2. 自定义登录页
 
-默认登录页是 `/auth/login`(容器内 `/app/resource/public/auth/login/index.html`),单文件自包含(内联 CSS/JS),直接挂载单文件即可完整自定义:
+share 模式的登录页是 `/auth/login`(容器内 `/app/resource/public/auth/login/index.html`),单文件自包含(内联 CSS/JS),直接挂载单文件即可完整自定义(mirror 模式默认登录页为 `/auth/uilogin`,见"环境变量一览"的 `LOGIN_URL`):
 
 1. 复制内置登录页作为模板:
 
@@ -318,7 +318,7 @@ docker compose logs chatgpt-web-ui
 
 ```yaml
 environment:
-  LOGIN_URL: "/auth/login"
+  LOGIN_URL: "/list"   # share 模式建议设置为 /list(车队列表页)
 ```
 
 ### 想隐藏工作区域(聊天/工作切换器)
