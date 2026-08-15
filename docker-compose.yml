@@ -44,8 +44,15 @@ services:
       # TURNSTILE_SITE_KEY: "0x4AAAA..."
       # TURNSTILE_SECRET_KEY: "0x4AAAA..."
       # Proof of Work 挑战(可选,默认 false 关闭):开启后前端需计算 PoW 哈希,
-      # finalize 校验失败返回 403 invalid_proofofwork
+      # finalize 校验失败,conversation 统一返回 403 chat_requirements_validation_failed
       # PROOF_OF_WORK_ENABLED: "false"
+      # 运行模式(可选,默认 mirror):mirror 镜像模式完整代理上游;share 分享模式
+      # 无真实 JWT,登录页用 usertoken 作为用户名,由后端签发自签 access token
+      # (配合下方 FAKE_TOKEN_SECRET),仅 share 模式会加载 list.js(车队列表页逻辑)
+      # RUN_MODE: "mirror"
+      # 自签 access token 签名密钥(可选,仅 RUN_MODE=share 时使用):
+      # 生产环境务必配置独立随机密钥,否则默认值可被伪造
+      # FAKE_TOKEN_SECRET: "change-me-to-a-random-secret"
 
     # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
     # 取消注释前,请将项目根目录的 config.yaml 按需修改后使用
