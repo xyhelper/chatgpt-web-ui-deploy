@@ -188,6 +188,114 @@ docker compose up -d
 docker image prune -f
 ```
 
+## 自定义页面与脚本(可选)
+
+服务内置以下可自定义的静态资源,均位于容器内 `/app/resource/public/`。推荐使用**单文件绑定挂载**覆盖:只遮蔽该文件、不影响镜像内其余资源,升级镜像时挂载仍然保留,是最安全的自定义方式。
+
+| 可自定义文件 | 容器内路径 | 说明 |
+| --- | --- | --- |
+| 自定义脚本 | `/app/resource/public/custom.js` | **每个页面都会加载**(jquery 之后、xy.js 之前,URL 带时间戳防缓存),适合注入样式、拦截请求、改 DOM、接第三方统计 |
+| 登录页 | `/app/resource/public/auth/login/index.html` | 默认登录页(`LOGIN_URL` 默认指向 `/auth/login`),单文件自包含(内联 CSS/JS) |
+| 车队列表页 | `/app/resource/public/list/index.html` | 车队列表页 `/list`,仅 `RUN_MODE=share` 使用,单文件自包含 |
+| 列表页逻辑脚本 | `/app/resource/public/list.js` | share 模式**每个页面**都会加载的车队列表逻辑(URL 带时间戳),mirror 模式不加载 |
+| 全局脚本 | `/app/resource/public/xy.js` | 全局逻辑,每个页面加载(URL 带时间戳) |
+
+> 挂载前可先执行 `docker compose cp chatgpt-web-ui:/app/resource/public/<文件> ./` 把镜像内置文件复制到宿主机作为修改模板。
+
+### 1. 自定义 custom.js(推荐)
+
+`custom.js` 是专门预留的自定义代码入口,每个页面都会加载,适合做纯前端增强(改样式、调行为、接统计),无需修改任何 Go 代码。
+
+1. 复制内置模板到宿主机:
+
+   ```bash
+   docker compose cp chatgpt-web-ui:/app/resource/public/custom.js ./custom.js
+   ```
+
+2. 编辑 `./custom.js`,在文件内编写你的自定义代码(内置模板自带使用说明注释与示例):
+
+   ```js
+   (function () {
+     "use strict";
+     // ===== 在此下方编写你的自定义代码 =====
+     // 示例:页面加载完成后打印日志
+     console.log("[custom.js] loaded");
+     // ===== 自定义代码结束 =====
+   })();
+   ```
+
+3. 在 `docker-compose.yml` 中挂载:
+
+   ```yaml
+   volumes:
+     - ./custom.js:/app/resource/public/custom.js:ro
+   ```
+
+4. 重启生效并验证:
+
+   ```bash
+   docker compose up -d
+   ```
+
+> 加载 URL 带时间戳(`?v=...`),之后每次修改只需刷新页面即可立即生效,无需清浏览器缓存、无需重启容器。
+
+### 2. 自定义登录页
+
+默认登录页是 `/auth/login`(容器内 `/app/resource/public/auth/login/index.html`),单文件自包含(内联 CSS/JS),直接挂载单文件即可完整自定义:
+
+1. 复制内置登录页作为模板:
+
+   ```bash
+   mkdir -p login
+   docker compose cp chatgpt-web-ui:/app/resource/public/auth/login/index.html ./login/index.html
+   ```
+
+2. 按需修改 `./login/index.html`(改样式、文案、提交逻辑等),然后挂载:
+
+   ```yaml
+   volumes:
+     - ./login/index.html:/app/resource/public/auth/login/index.html:ro
+   ```
+
+3. `docker compose up -d` 重建生效。
+
+> **注意(share 模式)**:share 模式的登录页与后端接口配合工作——提交 usertoken 后经 `/auth/logintoken` 校验登录,再调 `/auth/fake-token` 签发自签 access token(见 `FAKE_TOKEN_SECRET`)。若自定义登录页改动了表单提交逻辑,需保持与内置页一致(参考内置 `login/index.html` 的 `doLogin` 流程),否则无法登录。
+
+### 3. 自定义车队列表页(/list)
+
+`/list` 是 share 模式的车队列表页(容器内 `/app/resource/public/list/index.html`),单文件自包含,同样支持单文件挂载:
+
+1. 复制内置列表页作为模板:
+
+   ```bash
+   mkdir -p list
+   docker compose cp chatgpt-web-ui:/app/resource/public/list/index.html ./list/index.html
+   ```
+
+2. 修改后挂载:
+
+   ```yaml
+   volumes:
+     - ./list/index.html:/app/resource/public/list/index.html:ro
+   ```
+
+3. `docker compose up -d` 重建生效。
+
+> 列表页外观(HTML/CSS)改 `list/index.html` 即可;若想改**行为**(如车队列表拉取、通知拦截逻辑),可修改 `/app/resource/public/list.js` 并挂载:
+>
+> ```yaml
+> volumes:
+>   - ./list.js:/app/resource/public/list.js:ro
+> ```
+
+### 4. 修改后如何生效
+
+- **JS 文件**(`custom.js` / `list.js` / `xy.js`):加载 URL 带时间戳,静态资源实时读盘,改完**刷新页面**即生效,无浏览器缓存问题;
+- **HTML 页面**(登录页 / list 页):修改后刷新页面即可,若浏览器有缓存可强刷(`Ctrl+F5`);页面本身请求的仍是静态文件,同样无需重启容器;
+- **修改 `docker-compose.yml`**(如新增/调整挂载)后需 `docker compose up -d` 重建生效。
+
+> ⚠️ **挂载遮蔽警告**:绑定挂载会遮蔽镜像内同名路径的内容。上文推荐的单文件挂载(如 `./custom.js:/app/resource/public/custom.js`)只遮蔽该文件,**安全**;但**切勿整目录挂载** `resource/public` 或 `resource/template/tpl`(除非宿主机目录已含完整资源),否则镜像内置资源被遮蔽、页面模板丢失无法渲染(见下方 FAQ)。
+
 ## 常见问题(FAQ)
 
 ### 挂载目录后页面空白/模板丢失
