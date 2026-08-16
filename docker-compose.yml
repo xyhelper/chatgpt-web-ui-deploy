@@ -30,6 +30,10 @@ services:
     environment:
       # web 服务监听端口(容器内,默认 80)
       PORT: "80"
+      # 客户端请求体(含文件上传)大小上限(可选,默认 512MB):
+      # 纯数字(字节)或带 KB/MB/GB 后缀(如 100MB / 1.5GB),设为 0 不限制。
+      # GoFrame 默认仅 8MB,PUT /files 的文件上传转发依赖此值放宽
+      # CLIENT_MAX_BODY_SIZE: "512MB"
       # 上游 API 服务地址(必填),请改为你实际使用的上游地址
       UPSTREAM_URL: "https://your-upstream.example.com"
       # 未登录(无 accessToken)时跳转的登录地址,默认 /auth/uilogin(mirror 模式,

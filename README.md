@@ -80,6 +80,7 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | 环境变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PORT` | `80` | web 服务监听端口(**容器内**端口,需与 `ports` 映射保持一致) |
+| `CLIENT_MAX_BODY_SIZE` | `512MB` | 客户端请求体(含文件上传)大小上限。值可为纯数字(字节)或带 `KB/MB/GB` 后缀(如 `100MB`、`1.5GB`),设为 `0` 不限制。GoFrame 默认仅 8MB,会在请求进入 handler 前用 MaxBytesReader 包装 Body,超过即读取报错;本服务 `PUT /files` 的文件上传转发依赖此值放宽(见上游 `config.ClientMaxBodySize`) |
 | `UPSTREAM_URL` | `https://dev-chatgpt.xyhelper.cn` | 上游 API 服务地址,所有 `/backend-api/*` 等请求反向代理的目标 |
 | `LOGIN_URL` | `/auth/uilogin` | 未登录(无 accessToken)时跳转的登录地址。**share 模式建议设置为 `/list`**(车队列表页):用户未登录时先看到车队列表,点击车队进入登录,登录后回到聊天页;mirror 模式(默认)为 `/auth/uilogin`(输入 access token 的登录页) |
 | `SHOW_WORKSPACE` | `true` | 是否显示工作区域(聊天/工作切换器)。`true` 按账户结构自动判断,`false` 强制隐藏 |
