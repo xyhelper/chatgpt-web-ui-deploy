@@ -53,6 +53,11 @@ services:
       # Proof of Work 挑战(可选,默认 false 关闭):开启后前端需计算 PoW 哈希,
       # finalize 校验失败,conversation 统一返回 403 chat_requirements_validation_failed
       # PROOF_OF_WORK_ENABLED: "false"
+      # f/conversation 校验启动宽限期(可选,默认 5m):进程刚启动的一段时间内
+      # 跳过 FConversationCheck 全部校验直接转发上游,避免重启后浏览器残留的旧
+      # prepare/finalize token 导致上线瞬间大量 403。值支持纯数字(秒)或 Go
+      # duration 格式(5m / 300s / 1h),设为 0 表示不启用宽限期
+      # CHAT_REQ_GRACE_PERIOD: "5m"
       # 运行模式(可选,默认 mirror):mirror 镜像模式完整代理上游;share 分享模式
       # 无真实 JWT,登录页用 usertoken 作为用户名,由后端签发自签 access token
       # (配合下方 FAKE_TOKEN_SECRET),仅 share 模式会加载 list.js(车队列表页逻辑)

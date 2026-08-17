@@ -88,6 +88,7 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `TURNSTILE_SITE_KEY` | 空 | 自定义 Cloudflare Turnstile 站点 key。与 `TURNSTILE_SECRET_KEY` 同时配置才启用:前端(经 xy.js 劫持 turnstile.render)用自定义 key 渲染,后端 finalize 调 siteverify 真实验证,不匹配时 conversation 校验返回 403(见上游 `config.TurnstileEnabled`)。不配置则沿用模板内置官方 key,后端仅记录提交状态不真实验证 |
 | `TURNSTILE_SECRET_KEY` | 空 | Turnstile 站点 secret key,须与 `TURNSTILE_SITE_KEY` 成对配置 |
 | `PROOF_OF_WORK_ENABLED` | `false` | 是否启用 Proof of Work 挑战(前端哈希计算)。默认关闭:前端不计算、不提交 proofofwork,请求零额外开销;开启后 prepare 下发 seed/difficulty、finalize 校验哈希,失败时 conversation 统一返回 403 `chat_requirements_validation_failed`(见上游 `config.ProofOfWorkEnabled`) |
+| `CHAT_REQ_GRACE_PERIOD` | `5m` | f/conversation 校验启动宽限期:进程刚启动的一段时间内跳过 `FConversationCheck` 全部校验直接转发上游,避免重启/部署后浏览器残留的旧 prepare/finalize token 导致上线瞬间大量 403(见上游 `config.ChatReqGracePeriod`)。值支持纯数字(单位:秒)或 Go duration 格式(`5m` / `300s` / `1h`);设为 `0` 表示不启用宽限期(启动即恢复完整校验) |
 | `RUN_MODE` | `mirror` | 运行模式:`mirror` 镜像模式(默认),完整代理上游、保持与上游一致的页面与接口行为;`share` 分享模式,无真实 JWT,登录页用 usertoken 作为用户名,由后端签发自签 access token(见 `FAKE_TOKEN_SECRET`),配合上游 gfsessionid 登录态使用。仅 share 模式会加载 `list.js`(车队列表页相关逻辑) |
 | `FAKE_TOKEN_SECRET` | 默认内置值 | 自签 access token 的签名密钥(HS256),**仅 `RUN_MODE=share` 时使用**:登录页用 usertoken 作为用户名,后端 `POST /auth/fake-token` 签发带 `src:"local-fake"` 标记的假 accessToken,`renderPage` 据此判断登录态/显示用户名并验签识别伪造。**生产环境务必配置独立随机密钥**(默认值可被伪造) |
 
