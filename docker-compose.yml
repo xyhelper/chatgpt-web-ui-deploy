@@ -19,7 +19,7 @@ services:
     # 官方发布镜像(包含最新抓取的页面模板)
     image: ghcr.io/xyhelper/chatgpt-web-ui:latest
 
-    container_name: chatgpt-web-ui
+    # container_name: chatgpt-web-ui
     restart: unless-stopped
 
     # 端口映射:宿主机 8000 -> 容器内 80(需与下方 PORT 保持一致)
