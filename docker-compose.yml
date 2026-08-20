@@ -38,9 +38,17 @@ services:
       UPSTREAM_URL: "https://your-upstream.example.com"
       # 未登录(无 accessToken)时跳转的登录地址,默认 /auth/uilogin(mirror 模式,
       # 输入 access token 的登录页)。
-      # share 模式建议设置为 /list(车队列表页):用户未登录时先看到车队列表,
+      # share 模式建议设置为 /list(车队列表页):用户未登录时先看到车队列表,对接接入点时注释掉该配置
       # 点击车队进入登录,登录后回到聊天页
       LOGIN_URL: "/list"
+      # 运行模式(可选,默认 mirror):mirror 镜像模式完整代理上游;share 分享模式
+      # 无真实 JWT,登录页用 usertoken 作为用户名,由后端签发自签 access token
+      # (配合下方 FAKE_TOKEN_SECRET),仅 share 模式会加载 list.js(车队列表页逻辑)
+      # 对接接入点时,注释掉该配置,使用默认值 mirror
+      RUN_MODE: "share"
+      # 自签 access token 签名密钥(可选,仅 RUN_MODE=share 时使用):
+      # 生产环境务必配置独立随机密钥,否则默认值可被伪造
+      # FAKE_TOKEN_SECRET: "change-me-to-a-random-secret"
       # 是否显示工作区域(聊天/工作切换器):true 按账户结构自动判断(默认),false 强制隐藏
       SHOW_WORKSPACE: "true"
       # 固定模板版本(可选,默认自动发现 tpl/.current 指向的最新版本,一般无需配置)
@@ -58,13 +66,7 @@ services:
       # prepare/finalize token 导致上线瞬间大量 403。值支持纯数字(秒)或 Go
       # duration 格式(5m / 300s / 1h),设为 0 表示不启用宽限期
       # CHAT_REQ_GRACE_PERIOD: "5m"
-      # 运行模式(可选,默认 mirror):mirror 镜像模式完整代理上游;share 分享模式
-      # 无真实 JWT,登录页用 usertoken 作为用户名,由后端签发自签 access token
-      # (配合下方 FAKE_TOKEN_SECRET),仅 share 模式会加载 list.js(车队列表页逻辑)
-      # RUN_MODE: "mirror"
-      # 自签 access token 签名密钥(可选,仅 RUN_MODE=share 时使用):
-      # 生产环境务必配置独立随机密钥,否则默认值可被伪造
-      # FAKE_TOKEN_SECRET: "change-me-to-a-random-secret"
+
 
     # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
     # 取消注释前,请将项目根目录的 config.yaml 按需修改后使用
