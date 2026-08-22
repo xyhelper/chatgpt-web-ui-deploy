@@ -66,6 +66,12 @@ services:
       # prepare/finalize token 导致上线瞬间大量 403。值支持纯数字(秒)或 Go
       # duration 格式(5m / 300s / 1h),设为 0 表示不启用宽限期
       # CHAT_REQ_GRACE_PERIOD: "5m"
+      # /sw.js 预缓存清单缓存 TTL(可选,默认 5m):/sw.js 响应为 no-cache,
+      # 每次页面刷新浏览器都会回源请求,服务端遍历模板 cdn/ 目录生成预缓存
+      # 清单,短时缓存避免高频刷新场景下的重复读盘;热更新新增文件最多延迟
+      # TTL 进入新清单并触发浏览器 SW 更新。值支持纯数字(秒)或 Go duration
+      # 格式(5m / 300s / 1h),设为 0 表示禁用缓存(每次请求重新扫描目录)
+      # CDN_URLS_TTL: "5m"
 
 
     # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
