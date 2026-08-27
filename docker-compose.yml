@@ -77,6 +77,20 @@ services:
       # TTL 进入新清单并触发浏览器 SW 更新。值支持纯数字(秒)或 Go duration
       # 格式(5m / 300s / 1h),设为 0 表示禁用缓存(每次请求重新扫描目录)
       # CDN_URLS_TTL: "5m"
+      # WebSocket 转发服务器地址(可选,默认 wss://ws.xyhelper.cn):前端 pubsub
+      # 等 WebSocket 地址来自 GET /backend-api/celsius/ws/user 返回的
+      # websocket_url(上游形如 wss://ws.chatgpt.com/p13/ws/user/...?verify=...),
+      # 后端 celsius.go 统一将其主机改写为 WSSSERVER(路径/查询参数原样保留),
+      # 使浏览器直连可用的转发服务器;同时注入 window.__wssServer 供前端 xy.js
+      # 使用(见上游 config.WSSServer)。值须为完整 ws/wss 地址(协议+主机,可带端口)
+      # WSSSERVER: "wss://ws.xyhelper.cn"
+      # 文件上传地址处理方式(可选,默认空=本地反代):上游 /backend-api/files 返回的
+      # upload_url 决定浏览器把文件 PUT 到哪。三种取值:① 空(默认)重写为
+      # "<浏览器Refer主机>/files?upload_url=<原始>",浏览器 PUT 到本地 /files,由
+      # FilesUploadPut 转发到原始地址;② https://xxx 重写为 "<配置值>/files?upload_url=
+      # <原始>",浏览器直 PUT 到该服务器(须兼容 /files?upload_url= 反代协议,如另一个
+      # 本服务实例);③ raw 原样透传,浏览器直连上游存储(仅浏览器可直连时使用)
+      # UPLOAD_URL: "https://upload.example.com"
 
 
     # 可选:挂载自定义 config.yaml 覆盖全部配置(优先级高于环境变量)
