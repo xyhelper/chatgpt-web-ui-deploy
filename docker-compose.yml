@@ -80,9 +80,11 @@ services:
       # WebSocket 转发服务器地址(可选,默认 wss://ws.xyhelper.cn):前端 pubsub
       # 等 WebSocket 地址来自 GET /backend-api/celsius/ws/user 返回的
       # websocket_url(上游形如 wss://ws.chatgpt.com/p13/ws/user/...?verify=...),
-      # 后端 celsius.go 统一将其主机改写为 WSSSERVER(路径/查询参数原样保留),
-      # 使浏览器直连可用的转发服务器;同时注入 window.__wssServer 供前端 xy.js
-      # 使用(见上游 config.WSSServer)。值须为完整 ws/wss 地址(协议+主机,可带端口)
+      # POST /backend-api/ecosystem/call_mcp 响应 JSON 中嵌套的 websocket_url
+      # (_meta/meta 等,并非必有)同样处理。后端 celsius.go 统一将其主机改写为
+      # WSSSERVER(路径/查询参数原样保留),使浏览器直连可用的转发服务器;同时
+      # 注入 window.__wssServer 供前端 xy.js 使用(见上游 config.WSSServer)。
+      # 值须为完整 ws/wss 地址(协议+主机,可带端口)
       # WSSSERVER: "wss://ws.xyhelper.cn"
       # 文件上传地址处理方式(可选,默认空=本地反代):上游 /backend-api/files 返回的
       # upload_url 决定浏览器把文件 PUT 到哪。三种取值:① 空(默认)重写为
