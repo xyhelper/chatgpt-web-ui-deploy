@@ -84,6 +84,14 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `UPSTREAM_URL` | `https://dev-chatgpt.xyhelper.cn` | 上游 API 服务地址,所有 `/backend-api/*` 等请求反向代理的目标 |
 | `LOGIN_URL` | `/auth/uilogin` | 未登录(无 accessToken)时跳转的登录地址。**share 模式建议设置为 `/list`**(车队列表页):用户未登录时先看到车队列表,点击车队进入登录,登录后回到聊天页;mirror 模式(默认)为 `/auth/uilogin`(输入 access token 的登录页);**xymirror 模式建议设置为 `/auth/mirrorlogin`**(独立镜像登录页,直接输入 usertoken 登录) |
 | `SHOW_WORKSPACE` | `true` | 是否显示工作区域(聊天/工作切换器)。`true` 按账户结构自动判断,`false` 强制隐藏 |
+| `SHOW_SCHEDULED_MENU` | `true` | 侧边栏"已安排(Scheduled)"菜单是否显示,`false` 隐藏(后端把 Statsig gate `1326334369` 置为 false,见上游 `config.ShowScheduledMenu`) |
+| `SHOW_PROJECTS_MENU` | `true` | 侧边栏"项目(Projects)"菜单是否显示,`false` 隐藏(Statsig gate `491279851`,见上游 `config.ShowProjectsMenu`) |
+| `SHOW_LIBRARY_MENU` | `true` | 侧边栏"资料库(Library)"菜单是否显示,`false` 隐藏(Statsig gate `224248639`,见上游 `config.ShowLibraryMenu`) |
+| `SHOW_PLUGINS_MENU` | `true` | 侧边栏"插件(Plugins)"菜单是否显示,`false` 隐藏(Dynamic Config `2562735250` 的 nav_enabled 置 false,并顺带隐藏回退的 "Apps" 菜单 gate `2688889402`,见上游 `config.ShowPluginsMenu`) |
+| `SHOW_AGENTS_MENU` | `true` | 侧边栏"智能体(Agents)"菜单是否显示,`false` 隐藏(Statsig gate `3710572384`,见上游 `config.ShowAgentsMenu`) |
+| `SHOW_DEEP_RESEARCH_MENU` | `true` | 侧边栏"深度研究(Deep Research)"菜单是否显示,`false` 隐藏(Statsig gate `739972392` + layer `1570743643`/`576885595` 的 new_drapp 置 false,见上游 `config.ShowDeepResearchMenu`) |
+| `SHOW_GPT_MENU` | `true` | 侧边栏"GPTs(GPT 商店)"菜单是否显示,`false` 隐藏。该菜单无独立 statsig 开关,后端注入 `window.__showGptMenu` 由 xy.js 隐藏 DOM 元素(见上游 `config.ShowGptMenu`) |
+| `SHOW_CODEX_MENU` | `true` | 侧边栏"Codex"菜单是否显示,`false` 隐藏(Statsig layer `681740492` 的 destination 置为 "hidden",见上游 `config.ShowCodexMenu`) |
 | `TEMPLATE_VERSION` | 自动发现 | 固定页面模板 build 版本(如 `prod-xxx`)。一般无需配置,默认自动发现 `tpl/.current` 指向的最新版本。若显式指定了镜像内不存在的版本,启动时会尝试从 `https://github.com/oaistatic/<版本>` 自动克隆(见[模板版本缺失时自动克隆](#模板版本缺失时自动克隆)) |
 | `TURNSTILE_SITE_KEY` | 空 | 自定义 Cloudflare Turnstile 站点 key。与 `TURNSTILE_SECRET_KEY` 同时配置才启用:前端(经 xy.js 劫持 turnstile.render)用自定义 key 渲染,后端 finalize 调 siteverify 真实验证,不匹配时 conversation 校验返回 403(见上游 `config.TurnstileEnabled`)。不配置则沿用模板内置官方 key,后端仅记录提交状态不真实验证 |
 | `TURNSTILE_SECRET_KEY` | 空 | Turnstile 站点 secret key,须与 `TURNSTILE_SITE_KEY` 成对配置 |
@@ -96,6 +104,50 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `UPLOAD_URL` | 空 | 文件上传地址处理方式(见上游 `config.UploadURL`、`backend/files.go`)。上游 `POST /backend-api/files` 返回的 `upload_url` 决定浏览器把文件 PUT 到哪里,三种取值:① 空(默认)本地反代上传:重写为浏览器 Refer 的协议+主机 + `/files?upload_url=<原始地址>`,浏览器 PUT 到本地 `/files`,由 `FilesUploadPut` 转发到原始地址;② `https://xxx` 指定上传服务器:重写为 `<配置值>/files?upload_url=<原始地址>`,浏览器直 PUT 到该服务器(须兼容 `/files?upload_url=` 反代协议,如另一个本服务实例);③ `raw` 使用原始文件地址:`upload_url` 原样透传,浏览器直连上游存储(仅在浏览器能直连时使用) |
 
 > **注意**:`UPSTREAM_URL` 在示例 compose 中为占位地址 `https://your-upstream.example.com`,注释标注为**必填**,**部署前请务必替换**为你自己的上游 API 地址,否则页面请求会全部打到无效地址。
+
+### 运行模式(mirror / share / xymirror)必配置参数
+
+`RUN_MODE` 决定整个服务的行为形态,三种模式的**必配置参数各不相同**。下表按模式列出:标 ⭐ 的为**该模式下必须配置**的参数,其余为建议/可选。
+
+| 参数 | mirror(默认) | share | xymirror |
+| --- | --- | --- | --- |
+| `RUN_MODE` | 可不配(默认 `mirror`) | ⭐ 必配 `share` | ⭐ 必配 `xymirror` |
+| `UPSTREAM_URL` | ⭐ 必配(上游 API 地址) | ⭐ 必配 | ⭐ 必配 |
+| `LOGIN_URL` | 默认 `/auth/uilogin`,一般无需改 | ⭐ 建议 `/list`(未登录先看车队列表,点击车队再登录);若不想走车队列表可配 `/auth/login`(usertoken 登录页) | ⭐ 建议 `/auth/mirrorlogin`(独立镜像登录页,直接输入 usertoken) |
+| `FAKE_TOKEN_SECRET` | 不用(有真实 JWT,不涉及) | ⭐ **生产必配独立随机密钥**(无真实 JWT,登录用 usertoken 由后端签发假 accessToken,默认密钥可被伪造) | ⭐ **生产必配独立随机密钥**(同上) |
+| 依赖的上游登录态 | access token / xyhelper token 直接保存 | 上游 gfsessionid(cookie 反代透传) | 上游 gfsessionid(cookie 反代透传) |
+
+**三种模式速览**:
+
+- **mirror(默认)镜像模式**:完整代理上游,页面与接口行为与上游一致。用户输入 access token(或 xyhelper token)登录(`/auth/uilogin`),登录态存于浏览器 cookie。**必配 `UPSTREAM_URL` 即可运行**,其余全部走默认值。
+- **share 分享模式**:无真实 JWT,登录页用 **usertoken 作为用户名**,后端经 `/auth/fake-token` 签发自签 access token(配合 `FAKE_TOKEN_SECRET`),并配合上游 gfsessionid 登录态使用。加载 `list.js`(车队列表页逻辑),适合先展示车队列表、点击车队再登录的场景。**必配 `RUN_MODE=share`、`UPSTREAM_URL`、`LOGIN_URL=/list`、`FAKE_TOKEN_SECRET`**。
+- **xymirror 镜像分享模式**:与 share 同为无真实 JWT 的 usertoken 登录,但使用**独立镜像登录页 `/auth/mirrorlogin`**(容器内 `/app/resource/public/auth/mirrorlogin/index.html`,直接输入 usertoken 登录),**不加载**车队列表页逻辑(`list.js`)。**必配 `RUN_MODE=xymirror`、`UPSTREAM_URL`、`LOGIN_URL=/auth/mirrorlogin`、`FAKE_TOKEN_SECRET`**。
+
+**快速配置示例**:
+
+```yaml
+# mirror 模式(默认):仅需改上游地址
+environment:
+  UPSTREAM_URL: "https://your-upstream.example.com"
+
+# share 模式:四件套
+environment:
+  RUN_MODE: "share"
+  UPSTREAM_URL: "https://your-upstream.example.com"
+  LOGIN_URL: "/list"
+  FAKE_TOKEN_SECRET: "generate-a-long-random-secret"
+
+# xymirror 模式:四件套
+environment:
+  RUN_MODE: "xymirror"
+  UPSTREAM_URL: "https://your-upstream.example.com"
+  LOGIN_URL: "/auth/mirrorlogin"
+  FAKE_TOKEN_SECRET: "generate-a-long-random-secret"
+```
+
+> 生成随机密钥: `openssl rand -hex 32`。
+>
+> 三种模式均可叠加使用菜单隐藏类变量(`SHOW_*_MENU`)与其余可选变量(`SHOW_WORKSPACE`、`TURNSTILE_*`、`PROOF_OF_WORK_ENABLED`、`WSSSERVER`、`UPLOAD_URL` 等),相互独立、互不影响。
 
 ### 模板版本缺失时自动克隆
 
@@ -334,6 +386,24 @@ environment:
 environment:
   SHOW_WORKSPACE: "false"
 ```
+
+### 想隐藏某个侧边栏菜单(已安排/项目/资料库/插件/智能体/深度研究/GPTs/Codex)
+
+全部菜单都有独立开关,`false` 即隐藏(默认均显示):
+
+```yaml
+environment:
+  SHOW_SCHEDULED_MENU: "false"      # 已安排
+  SHOW_PROJECTS_MENU: "false"       # 项目
+  SHOW_LIBRARY_MENU: "false"        # 资料库
+  SHOW_PLUGINS_MENU: "false"        # 插件
+  SHOW_AGENTS_MENU: "false"         # 智能体
+  SHOW_DEEP_RESEARCH_MENU: "false"  # 深度研究
+  SHOW_GPT_MENU: "false"            # GPTs(GPT 商店)
+  SHOW_CODEX_MENU: "false"          # Codex
+```
+
+隐藏通过修改注入页面的 Statsig bootstrap 配置(个别菜单如 GPTs 经 xy.js 隐藏 DOM)实现,不修改任何模板静态资源,也不影响其他菜单与功能(详见[环境变量一览](#环境变量一览))。
 
 ### 端口被占用
 

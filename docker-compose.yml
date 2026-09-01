@@ -56,6 +56,16 @@ services:
       # FAKE_TOKEN_SECRET: "change-me-to-a-random-secret"
       # 是否显示工作区域(聊天/工作切换器):true 按账户结构自动判断(默认),false 强制隐藏
       SHOW_WORKSPACE: "true"
+      # 侧边栏菜单显示开关(可选,默认全部显示,false 隐藏对应菜单):
+      # 隐藏通过修改注入页面的 Statsig bootstrap 配置实现,不修改模板静态资源
+      # SHOW_SCHEDULED_MENU: "true"      # 已安排(Scheduled)
+      # SHOW_PROJECTS_MENU: "true"       # 项目(Projects)
+      # SHOW_LIBRARY_MENU: "true"        # 资料库(Library)
+      # SHOW_PLUGINS_MENU: "true"        # 插件(Plugins)
+      # SHOW_AGENTS_MENU: "true"         # 智能体(Agents)
+      # SHOW_DEEP_RESEARCH_MENU: "true"  # 深度研究(Deep Research)
+      # SHOW_GPT_MENU: "true"            # GPTs(GPT 商店,经 xy.js 隐藏 DOM)
+      # SHOW_CODEX_MENU: "true"          # Codex(layer 681740492 destination 置 hidden)
       # 固定模板版本(可选,默认自动发现 tpl/.current 指向的最新版本,一般无需配置)
       # TEMPLATE_VERSION: "prod-xxx"
       # 自定义 Cloudflare Turnstile(可选):site key + secret key 同时配置才启用
