@@ -10,6 +10,10 @@
 
 ### 新增/变更
 
+- **上传地址本地反代**：`/backend-api/files/upload_reservations` 返回的 `upload_url`
+  改为当前 web-ui 的 `/files?upload_url=...`，上传流量不再让浏览器直连上游对象存储；
+  同时支持 PUT 和 POST 两种上传方式。
+- **用量设置页直达**：刷新或直接访问 `/settings/usage?tab=overview` 不再 404。
 - **选车页 Codex 用量**：车队列表状态列显示 Codex 剩余额度百分比；同时存在
   5 小时和 7 天限流窗口时两个都展示，悬停或点击可查看已用比例、套餐、窗口时长
   和重置时间，额度用尽时显示红色提示。设置 `SHOW_WORKSPACE=false` 时，
