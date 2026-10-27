@@ -10,6 +10,9 @@
 
 ### 新增/变更
 
+- **语音听写走 /transcribe**：页面模板更新到 `prod-5d565800...`，并在服务端固定
+  Statsig dictation layer 为 `buffered`，麦克风听写不再连接
+  `/backend-api/dictation/stream`，改为提交 `/backend-api/transcribe`。
 - **上传地址本地反代**：`/backend-api/files/upload_reservations` 返回的 `upload_url`
   改为当前 web-ui 的 `/files?upload_url=...`，上传流量不再让浏览器直连上游对象存储；
   同时支持 PUT 和 POST 两种上传方式。
