@@ -102,6 +102,9 @@ config.yaml(挂载) > 环境变量 > 镜像内置默认值
 | `FAKE_TOKEN_SECRET` | 默认内置值 | 自签 access token 的签名密钥(HS256),**仅 `RUN_MODE=share` / `xymirror` 时使用**:登录页用 usertoken 作为用户名,后端 `POST /auth/fake-token` 签发带 `src:"local-fake"` 标记的假 accessToken,`renderPage` 据此判断登录态/显示用户名并验签识别伪造。**生产环境务必配置独立随机密钥**(默认值可被伪造) |
 | `WSSSERVER` | `wss://ws.xyhelper.cn` | WebSocket 转发服务器地址(见上游 `config.WSSServer`)。前端 pubsub 等 WebSocket 地址来自 `GET /backend-api/celsius/ws/user` 返回的 `websocket_url`(上游形如 `wss://ws.chatgpt.com/p13/ws/user/...?verify=...`);`POST /backend-api/ecosystem/call_mcp` 响应 JSON 中嵌套的 `websocket_url`(`_meta`/`meta` 等,并非必有)同样处理。后端 `backend.celsius.go` 统一将 `ws.chatgpt.com` 主机改写为 `WSSSERVER`(路径/查询参数原样保留),使浏览器直连可用的转发服务器;同时经 `ui.GetEnvScript` 注入 `window.__wssServer` 供前端 xy.js 使用。值须为完整 ws/wss 地址(协议+主机,可带端口) |
 | `UPLOAD_URL` | 空 | 文件上传地址处理方式(见上游 `config.UploadURL`、`backend/files.go`)。上游 `POST /backend-api/files` 返回的 `upload_url` 决定浏览器把文件 PUT 到哪里,三种取值:① 空(默认)本地反代上传:重写为浏览器 Refer 的协议+主机 + `/files?upload_url=<原始地址>`,浏览器 PUT 到本地 `/files`,由 `FilesUploadPut` 转发到原始地址;② `https://xxx` 指定上传服务器:重写为 `<配置值>/files?upload_url=<原始地址>`,浏览器直 PUT 到该服务器(须兼容 `/files?upload_url=` 反代协议,如另一个本服务实例);③ `raw` 使用原始文件地址:`upload_url` 原样透传,浏览器直连上游存储(仅在浏览器能直连时使用) |
+| `FILES_DISABLE_AUTH` | `false` | 关闭 `PUT/POST /files` 上传鉴权,用于上传反代节点 A;不影响 `/backend-api/files`、`upload_reservations` 创建接口。开启后 A 是开放上传转发器,必须用防火墙/内网限制访问,不能直接暴露公网 |
+| `FILES_CORS_ORIGINS` | 空;`FILES_DISABLE_AUTH=true` 时默认 `*` | 允许跨域调用 `/files` 的浏览器 Origin,逗号分隔;`*` 允许任意 Origin(适合 B 域名不固定) |
+| `FILES_CORS_ALLOW_CREDENTIALS` | `false` | 跨域上传是否允许携带 cookie;仅 B 的 fetch 使用 `credentials: include` 时需要,开启后回显 Origin |
 
 > **注意**:`UPSTREAM_URL` 在示例 compose 中为占位地址 `https://your-upstream.example.com`,注释标注为**必填**,**部署前请务必替换**为你自己的上游 API 地址,否则页面请求会全部打到无效地址。
 

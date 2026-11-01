@@ -6,6 +6,22 @@
 日期为发布日，与本仓库 `deploy` 分支及镜像的 `latest` 标签同步。升级方式见
 [README 的「升级」章节](./README.md#更新与升级)。
 
+## [2026-11-02]
+
+### 新增/变更
+
+- **上传反代节点 A/B 分离**：新增 `FILES_DISABLE_AUTH`、`FILES_CORS_ORIGINS`、`FILES_CORS_ALLOW_CREDENTIALS` 环境变量。
+  - A 可关闭 `PUT/POST /files` 的登录校验，并允许 B 跨域上传；
+  - B 将 `UPLOAD_URL` 设置为 A 的地址后，浏览器直传 A 的 `/files`；
+  - 创建上传接口 `/backend-api/files`、`upload_reservations` 的认证保持不变；
+  - B 域名不固定时可用 `FILES_CORS_ORIGINS=*`；
+  - 该功能默认关闭，不影响普通部署。
+
+### 注意事项
+
+- A 开启 `FILES_DISABLE_AUTH=true` 后是开放上传转发器，CORS 不能替代网络访问控制，必须通过防火墙/内网限制访问，不能直接暴露公网。
+- 保留 `xyhelper.cn -> oaiusercontent.com` 的上传目标兼容替换。
+
 ## [2026-10-28]
 
 ### 修复
