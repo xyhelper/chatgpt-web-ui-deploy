@@ -15,6 +15,7 @@
   - B 将 `UPLOAD_URL` 设置为 A 的地址后，浏览器直传 A 的 `/files`；
   - 创建上传接口 `/backend-api/files`、`upload_reservations` 的认证保持不变；
   - B 域名不固定时可用 `FILES_CORS_ORIGINS=*`；
+  - 上传响应会剥离上游自带的 CORS 头，避免重复 `Access-Control-Allow-Origin`；
   - 该功能默认关闭，不影响普通部署。
 
 ### 注意事项
